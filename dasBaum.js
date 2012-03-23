@@ -1006,6 +1006,11 @@ $.widget( "ui.dasBaum", {
 	handleKey: function(event) {
 		var up = false;
 		switch(event.keyCode) {
+			case 32:
+				if(this.hoveredNode) {
+					this.toggleItem(this.hoveredNode.id);
+				}
+				break;
 			case 38:
 				up = true;
 			case 40:
