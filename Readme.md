@@ -7,6 +7,7 @@ To try it out, just click [here](http://www.mkleinhans.de/github/dasBaum/example
 
 ##Example
 To build a simple tree, just run the following code snippet (assuming you have an element #divId)
+
 ```javascript
 $('#divId').dasBaum({
 	items: [
