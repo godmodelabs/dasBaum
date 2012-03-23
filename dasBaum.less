@@ -1,0 +1,345 @@
+.tv {
+    padding: 10px 0px 0px;
+}
+
+.moduleSubview .dc_info {
+    display: block;
+    color: #333;
+    text-shadow: 0px 1px 0px #fce68d;
+    background-color: #ffcc00;
+    text-align: center;
+    border-radius: 3px;
+    box-shadow: inset 0px 1px 0px 0px #fce68d, inset 0px -1px 0px 0px #000;
+    padding: 0px 0px 1px 20px;
+    margin: 10px 0px 20px;
+    font-weight: bold;
+    line-height: 18px;
+}
+
+.moduleContent .tv_entry,
+.moduleContent .tv_folder {
+    border-top: 0px !important;
+    line-height: 25px;
+}
+
+.tv_entry .tv_content {
+	padding-left: 16px;
+	line-height: 25px;
+	span {
+	    color: #fff;
+	    text-shadow: 0px 1px 1px #000;
+	}
+}
+
+.tv_entry .tv_content div {
+    line-height: 25px;
+}
+
+.tv_folder span {
+    color: #bbb;
+    text-shadow: 0px 1px 1px #000;
+}
+
+.tv_folderOpen span {
+    color: #bbb;
+}
+
+.tv_entry, .tv_folder {
+	overflow: hidden;
+	cursor: pointer;
+	height: 25px;
+	line-height:25px;
+	position: relative;
+	text-shadow: 0px 1px 1px #000;
+}
+
+.tv_entry span, .tv_folder span {
+	position: relative;
+	line-height: 30px;
+}
+
+.tv_entry input, .tv_folder input {
+	height: 18px;
+	width: 100px;
+}
+
+.tv_dropHelper {
+	min-height: 30px;
+}
+
+.tv_dropHoverRoot {
+	background-color: rgba(200,200,200,0.1);
+}
+
+.tv_hover {
+	color: #333;
+	background-color: #ffcc00;
+	text-shadow: 0px 1px 1px #fff;
+	border-radius: 2px;
+	box-shadow: inset 0px 1px 1px rgba(255,255,255,0.33), inset 0px -1px 1px rgba(0,0,0,0.33);
+	span {
+	    color: #000 !important;
+	    text-shadow: 0px 1px 1px #fff !important;
+	}
+}
+
+.tv_button_details {
+	text-indent:20px;
+	overflow:hidden;
+	background-image: url(img/icon-details.png);
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.tv_button_actions {
+	text-indent:20px;
+	overflow:hidden;
+	background-image: url(img/icon-delete.png);
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.tv_button {
+	float: right;
+	margin-left: 0px;
+	height: 24px;
+	width: 24px;
+	text-indent: -9999px;
+	background-repeat: no-repeat;
+	&.tv_button_actions {
+	    background-image: url(img/icon-charting-delete.png);
+	    &:hover {
+	        background-image: url(img/icon-charting-delete-act.png);
+	    }
+	}
+	&.tv_button_details {
+	    background-image: url(img/icon-tv-view.png);
+	    &:hover {
+	        background-image: url(img/icon-tv-view-act.png);
+	    }
+	}
+}
+
+.button_newFolder {
+    background-image: url(img/icon-tv-newfolder.png);
+    position: absolute;
+    top: 8px;
+    left: 13px;
+    height: 24px;
+    width: 24px;
+    text-indent: -9999px;
+    background-repeat: no-repeat;
+    &:hover {
+        background-image: url(img/icon-tv-newfolder-act.png);
+    }
+}
+
+.tv_dropBehind { 
+	position: relative;
+	margin-top: -3px;
+	height: 8px;
+	background-image: url(../gfx/dropIndicator.png);
+	background-repeat: no-repeat;
+	z-index:999;
+}
+
+.tv_dropHover {
+	background-color: rgba(200,200,200,0.25); 
+	color: #000;
+	border-radius: 5px;
+}
+.tv_highlighted {
+	span {
+	    color: #ffcc00 !important;
+	    
+	}
+	.tv_icon {
+	    background-image: url(img/icon-tv-entry-act.png) !important;
+	}
+	&:hover span {
+	    color: #000 !important;
+	    text-shadow: 0px 1px 0px #fff;
+	}
+}
+
+/* icons */
+.tv_icon {
+	float: left;
+	width: 22px;
+	height: 25px;
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+.tv_folder .tv_icon {
+	background-image: url(img/icon-tv-folder.png);
+}
+
+/* Folder with Numbers */
+
+.tv_folder.tv_folder_0 .tv_icon {
+	background-image: url(img/icon-tv-folder-0.png);
+}
+.tv_folder.tv_folder_1 .tv_icon {
+	background-image: url(img/icon-tv-folder-1.png);
+}
+.tv_folder.tv_folder_2 .tv_icon {
+	background-image: url(img/icon-tv-folder-2.png);
+}
+.tv_folder.tv_folder_3 .tv_icon {
+	background-image: url(img/icon-tv-folder-3.png);
+}
+.tv_folder.tv_folder_4 .tv_icon {
+	background-image: url(img/icon-tv-folder-4.png);
+}
+.tv_folder.tv_folder_5 .tv_icon {
+	background-image: url(img/icon-tv-folder-5.png);
+}
+.tv_folder.tv_folder_6 .tv_icon {
+	background-image: url(img/icon-tv-folder-6.png);
+}
+.tv_folder.tv_folder_7 .tv_icon {
+	background-image: url(img/icon-tv-folder-7.png);
+}
+.tv_folder.tv_folder_8 .tv_icon {
+	background-image: url(img/icon-tv-folder-8.png);
+}
+.tv_folder.tv_folder_9 .tv_icon {
+	background-image: url(img/icon-tv-folder-9.png);
+}
+
+.tv_folderOpen .tv_icon {
+	background-image: url(img/icon-tv-folder-open.png);
+}
+.tv_folder.tv_highlighted .tv_icon {
+    background-image: url(img/icon-tv-folder-open.png) !important;
+}
+
+.tv_folderOpen.tv_folder_0 .tv_icon,
+.tv_folder.tv_highlighted.tv_folder_0 .tv_icon {
+    background-image: url(img/icon-tv-folder-0.png) !important;
+}
+.tv_folderOpen.tv_folder_1 .tv_icon,
+.tv_folder.tv_highlighted.tv_folder_1 .tv_icon {
+    background-image: url(img/icon-tv-folder-open-1.png) !important;
+}
+.tv_folderOpen.tv_folder_2 .tv_icon,
+.tv_folder.tv_highlighted.tv_folder_2 .tv_icon {
+    background-image: url(img/icon-tv-folder-open-2.png) !important;
+}
+.tv_folderOpen.tv_folder_3 .tv_icon,
+.tv_folder.tv_highlighted.tv_folder_3 .tv_icon {
+    background-image: url(img/icon-tv-folder-open-3.png) !important;
+}
+.tv_folderOpen.tv_folder_4 .tv_icon,
+.tv_folder.tv_highlighted.tv_folder_4 .tv_icon {
+    background-image: url(img/icon-tv-folder-open-4.png) !important;
+}
+.tv_folderOpen.tv_folder_5 .tv_icon,
+.tv_folder.tv_highlighted.tv_folder_5 .tv_icon {
+    background-image: url(img/icon-tv-folder-open-5.png) !important;
+}
+.tv_folderOpen.tv_folder_6 .tv_icon,
+.tv_folder.tv_highlighted.tv_folder_6 .tv_icon {
+    background-image: url(img/icon-tv-folder-open-6.png) !important;
+}
+.tv_folderOpen.tv_folder_7 .tv_icon,
+.tv_folder.tv_highlighted.tv_folder_7 .tv_icon {
+    background-image: url(img/icon-tv-folder-open-7.png) !important;
+}
+.tv_folderOpen.tv_folder_8 .tv_icon,
+.tv_folder.tv_highlighted.tv_folder_8 .tv_icon {
+    background-image: url(img/icon-tv-folder-open-8.png) !important;
+}
+.tv_folderOpen.tv_folder_9 .tv_icon,
+.tv_folder.tv_highlighted.tv_folder_9 .tv_icon {
+    background-image: url(img/icon-tv-folder-open-9.png) !important;
+}
+
+
+
+.tv_entry .tv_icon {
+	background-image: url(img/icon-tv-entry.png);
+}
+
+.bar {
+    text-align: center;
+    a {
+        padding: 5px 10px;
+        text-decoration: none;
+        background-color: #333;
+        border-radius: 3px;
+        box-shadow: inset 0px 1px 0px rgba(255,255,255,0.1), inset 0px -1px 0px rgba(0,0,0,0.2);
+        color: #fff;
+        text-indent: 0px;
+        cursor: pointer;
+        margin: 0px;
+        display: inline;
+        float: none;
+        border: 1px solid #000;
+        &:hover {
+            color: #ffcc00; 
+            background-color: #444;
+        }
+    }
+}
+
+/* toggler */
+.tv_folderToggler {
+	float: left;
+	width: 16px;
+	height: 25px;
+	background-image: url(img/icon-tv-arrow-right.png);
+	background-repeat: no-repeat;
+	background-position: center center;
+	&:hover {
+	    background-image: url(img/icon-tv-arrow-right-act.png);
+	}
+}
+
+.tv_folderOpen .tv_folderToggler {
+	background-image: url(img/icon-tv-arrow-down.png);
+	&:hover {
+	    background-image: url(img/icon-tv-arrow-down-act.png);
+	}
+}
+
+.dialog_c {
+    .tv {
+        background-image: url(img/bg-dragable-content.png);
+        padding: 10px 15px;
+        .tv_folder {
+            border-top: 0px;
+        }
+        .tv_entry {
+            border-top: 0px;
+        }
+    }
+    .newfolderbutton {
+        box-shadow: 0px 1px 0px rgba(255,255,255,0.1);
+        background: #262626;
+        background-image: url(img/icon-tv-newfolder.png);
+        background-repeat: no-repeat;
+        background-position: 5px -1px;
+        border: 1px solid #000;
+        color: #fff;
+        text-shadow: 0px 1px 0px #000;
+        border-radius: 3px;
+        line-height: 22px;
+        height: auto;
+        padding: 0px 15px 1px 34px;
+        font-size: 10px;
+        margin: -34px 0px 0px 10px;
+        &:hover {
+            color: #ffcc00;
+            background-image: url(img/icon-tv-newfolder-act.png);
+        }
+    }
+    .input {
+        padding: 10px 0px 10px;
+        font-weight: bold;
+    }
+    .public {
+        text-align: center;
+    }
+}
