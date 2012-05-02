@@ -1,9 +1,9 @@
 .tv{padding:10px 0px 0px;}
 .moduleSubview .dc_info{display:block;color:#333;text-shadow:0px 1px 0px #fce68d;background-color:#ffcc00;text-align:center;border-radius:3px;box-shadow:inset 0px 1px 0px 0px #fce68d,inset 0px -1px 0px 0px #000000;padding:0px 0px 1px 20px;margin:10px 0px 20px;font-weight:bold;line-height:18px;}
 .moduleContent .tv_entry,.moduleContent .tv_folder{border-top:0px !important;line-height:25px;}
-.tv_entry .tv_content{padding-left:16px;line-height:25px;}.tv_entry .tv_content span{color:#fff;text-shadow:0px 1px 1px #000;}
+.tv_entry .tv_content{padding-left:16px;line-height:25px;}.tv_entry .tv_content span{text-overflow: ellipsis;white-space: nowrap;overflow: hidden;display: block;color:#fff;text-shadow:0px 1px 1px #000;}
 .tv_entry .tv_content div{line-height:25px;}
-.tv_folder span{color:#bbb;text-shadow:0px 1px 1px #000;}
+.tv_folder span{color:#bbb;text-shadow:0px 1px 1px #000;text-overflow: ellipsis;white-space: nowrap;overflow: hidden;display: block;}
 .tv_folderOpen span{color:#bbb;}
 .tv_entry,.tv_folder{cursor:pointer;height:25px;line-height:25px;position:relative;text-shadow:0px 1px 1px #000;}
 .tv_entry span,.tv_folder span{position:relative;line-height:30px;}

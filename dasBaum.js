@@ -117,9 +117,11 @@ $.widget( "ui.dasBaum", {
 			node = this._findItem(node);
 		}
 		
-		f(node);
+		if(!this._filter || this._filter(node)) {
+			f(node);
+		}
 		
-		if(node.childs && (!visibleOnly || !node.collapsed)) {
+		if(node.childs && (this._filter || !visibleOnly || !node.collapsed)) {
 			for(var i = 0;i < node.childs.length;i++) {
 				if(this._map(f,node.childs[i],visibleOnly) === false) {
 					return;
@@ -128,7 +130,7 @@ $.widget( "ui.dasBaum", {
 		}
 	},
 	
-	_findItemWithIndex: function(index) {
+	_findItemWithIndex: function(index,visibleOnly) {
 		var node = null;
 		
 		this._map(function(n) {
@@ -136,7 +138,7 @@ $.widget( "ui.dasBaum", {
 				node = n;
 				return false;
 			}
-		});
+		},null,visibleOnly);
 		
 		return node;
 	},
@@ -223,12 +225,12 @@ $.widget( "ui.dasBaum", {
 		if(this.hoverFirst) {
 			this.hoverFirst = false;
 			this.hoveredNode = null;
-			if(this._index == 1) {
+			//if(this._index == 1) {
 				this.handleKey({keyCode:40});
-			} else if(this.hoveredNode) {
-				this.element.find('[data-treeviewid='+this.hoveredNode.id+']').mouseleave();
-				this.hoveredNode = null;
-			}
+				//} else if(this.hoveredNode) {
+			//	this.element.find('[data-treeviewid='+this.hoveredNode.id+']').mouseleave();
+			//	this.hoveredNode = null;
+			//}
 		} else if(this.hoveredNode) {
 			var e = this.element.find('[data-treeviewid='+this.hoveredNode.id+']');
 			if(e.length == 0) {
@@ -264,7 +266,6 @@ $.widget( "ui.dasBaum", {
 				if(ie.active) {
 					self._renameItem(ie.id);
 					ie.id = '';
-					ie.active = false;
 				}
 			});
 			var h = this.element.height();
@@ -293,233 +294,230 @@ $.widget( "ui.dasBaum", {
 			return;
 		} 
 		
-		var self = this;
-		var el = null, html = null, classes;
+		if(!this._filter || this._filter(node)) {
+			
+			var self = this;
+			var el = null, html = null, classes;
 		
-		node.index = this._index++;
+			node.index = this._index++;
 		
-		// create dom element
-		if(node.childs) {
-			var itemCount = node.hasOwnProperty('itemCount')?node.itemCount:Math.min(9,node.childs.length);
+			// create dom element
+			if(node.childs) {
+				var itemCount = node.hasOwnProperty('itemCount')?node.itemCount:Math.min(9,node.childs.length);
 			
-			html = 	'<div class="'+(node.collapsed?this.options.classes.folderClosed:this.options.classes.folderOpen)+' '+this.options.classes.folder+' '+this.options.classes.folder+'_'+itemCount+'"><div class="'+this.options.classes.content+'">';
-			for(var i in node.buttons) {
-				classes = this.options.classes.button + ' ' + this.options.classes.button + '_' + node.buttons[i];
-				html += '<div data-button="'+node.buttons[i]+'" style="display:none" class="'+classes +'">&gt;</div>';
-			}
-			html += '<div class="'+this.options.classes.folderToggler+'">&nbsp;</div>';
-			if(this.options.icons) {
-				html += '<div class="'+this.options.classes.icon+'">&nbsp;</div>';
-			}
-			html += '<span>'+node.label+'</span>';
-			html += '</div></div>';
+				html = 	'<div class="'+(node.collapsed?this.options.classes.folderClosed:this.options.classes.folderOpen)+' '+this.options.classes.folder+' '+this.options.classes.folder+'_'+itemCount+'"><div class="'+this.options.classes.content+'">';
+				for(var i in node.buttons) {
+					classes = this.options.classes.button + ' ' + this.options.classes.button + '_' + node.buttons[i];
+					html += '<div data-button="'+node.buttons[i]+'" style="display:none" class="'+classes +'">&gt;</div>';
+				}
+				html += '<div class="'+this.options.classes.folderToggler+'">&nbsp;</div>';
+				if(this.options.icons) {
+					html += '<div class="'+this.options.classes.icon+'">&nbsp;</div>';
+				}
+				html += '<span title="'+node.label+'">'+node.label+'</span>';
+				html += '</div></div>';
 			
-			el = $(html);
-		} else {
-			html = 	'<div class="'+this.options.classes.entry+'"><div class="'+this.options.classes.content+'">';
-			for(var i in node.buttons) {
-				classes = this.options.classes.button + ' ' + this.options.classes.button + '_' + node.buttons[i];
-				html += '<div data-button="'+node.buttons[i]+'" style="display:none" class="'+classes +'">&gt;</div>';
-			}
-			if(this.options.icons) {
-				html += '<div class="'+this.options.classes.icon+'">&nbsp;</div>';
-			}
-			
-			if(node.html) {
-				html += node.html;
+				el = $(html);
 			} else {
-				html += '<span>'+node.label+'</span>';
-			}
+				html = 	'<div class="'+this.options.classes.entry+'"><div class="'+this.options.classes.content+'">';
+				for(var i in node.buttons) {
+					classes = this.options.classes.button + ' ' + this.options.classes.button + '_' + node.buttons[i];
+					html += '<div data-button="'+node.buttons[i]+'" style="display:none" class="'+classes +'">&gt;</div>';
+				}
+				if(this.options.icons) {
+					html += '<div class="'+this.options.classes.icon+'">&nbsp;</div>';
+				}
 			
-			html += '</div></div>';
-			el = $(html);
-		}
-		node.element = el;
-		
-		el.hover(function() {
-			if(self._dragging) {
-				return;
-			}
+				if(node.html) {
+					html += node.html;
+				} else {
+					html += '<span title="'+node.label+'">'+node.label+'</span>';
+				}
 			
-			// reset previously hovered element
-			$(this).parent().find('.'+self.options.classes.hover).
-				removeClass(self.options.classes.hover).
-				find('.'+self.options.classes.button).hide();
-			
-			// set hover state	
-			$(this).find('.'+self.options.classes.button).show();
-			$(this).addClass(self.options.classes.hover);
-			
-			// trigger event
-			if(typeof self.options.hovered == 'function') {
-				self.options.hovered(node.id,node.context);
+				html += '</div></div>';
+				el = $(html);
 			}
-			self.hoveredNode = node;
+			node.element = el;
+		
+			el.hover(function() {
+				if(self._dragging) {
+					return;
+				}
 			
-		}, function() {
-			if(self.hoveredNode == node) {
-				self.hoveredNode = null;
-			}
-			// reset hover state
-			$(this).find('.'+self.options.classes.button).hide();
-			$(this).removeClass(self.options.classes.hover);
-		});
-		
-		el.find('.'+self.options.classes.button).click(function(event) {
-			if(typeof self.options.button == 'function') {
-				self.options.button(this,$(this).attr('data-button'),node.id,node.context,event);
-			}
-			return false;
-		});
-		
-		el.attr('data-treeviewid',node.id);
-		
-		if(node.parent.level >= 1) {
-			el.css('padding-left',node.parent.level*this.options.indent);
-		}
-		if(node.cls) {
-			el.addClass(node.cls);
-		}
-		if(this.highlightedNode == node) {
-			el.addClass(this.options.classes.highlighted);
-		}
-		
-		if(this.options.allowDrag) {
-			el.draggable({
-				distance: 20,
-				revert:'invalid',
-				start: function() {
-					self._dragging = true;
-					if($(this).find('input').length > 0) {
-						self._renameItem($(this).attr('data-treeviewid'));
-					}
-				},
-				stop: function() {
-					self._dragging = false;
-				},
-				helper: function() {
-					var h = $(this).clone();
-					h.removeClass(self.options.classes.highlighted);
-					h.removeClass(self.options.classes.hover);
-					h.find('.'+self.options.classes.folderToggler+',.'+self.options.classes.button).detach();
-					return h;
-				},
-				opacity:0.7
+				// reset previously hovered element
+				$(this).parent().find('.'+self.options.classes.hover).
+					removeClass(self.options.classes.hover).
+					find('.'+self.options.classes.button).hide();
+			
+				// set hover state	
+				$(this).find('.'+self.options.classes.button).show();
+				$(this).addClass(self.options.classes.hover);
+			
+				// trigger event
+				if(typeof self.options.hovered == 'function') {
+					self.options.hovered(node.id,node.context);
+				}
+				self.hoveredNode = node;
+			
+			}, function() {
+				if(self.hoveredNode == node) {
+					self.hoveredNode = null;
+				}
+				// reset hover state
+				$(this).find('.'+self.options.classes.button).hide();
+				$(this).removeClass(self.options.classes.hover);
 			});
+		
+			el.find('.'+self.options.classes.button).click(function(event) {
+				if(typeof self.options.button == 'function') {
+					self.options.button(this,$(this).attr('data-button'),node.id,node.context,event);
+				}
+				return false;
+			});
+		
+			el.attr('data-treeviewid',node.id);
+		
+			if(node.parent.level >= 1 && !this._filter) {
+				el.css('padding-left',node.parent.level*this.options.indent);
+			}
+			if(node.cls) {
+				el.addClass(node.cls);
+			}
+			if(this.highlightedNode == node) {
+				el.addClass(this.options.classes.highlighted);
+			}
+		
+			if(this.options.allowDrag) {
+				el.draggable({
+					distance: 20,
+					revert:'invalid',
+					start: function() {
+						self._dragging = true;
+						if($(this).find('input').length > 0) {
+							self._renameItem($(this).attr('data-treeviewid'));
+						}
+					},
+					stop: function() {
+						self._dragging = false;
+					},
+					helper: function() {
+						var h = $(this).clone();
+						h.removeClass(self.options.classes.highlighted);
+						h.removeClass(self.options.classes.hover);
+						h.find('.'+self.options.classes.folderToggler+',.'+self.options.classes.button).detach();
+						return h;
+					},
+					opacity:0.7
+				});
 			
-			el.find('.'+self.options.classes.content).droppable({
-				greedy:'true',
-				tolerance:'pointer',
-				accept: function(draggable) {
-					return self._dropAccept(draggable.attr('data-treeviewid'),$(this).parent().attr('data-treeviewid'));
-				},
-				over: function( event, ui ) {
-					if(event.pageX < $(this).find('span').offset().left) {
-						return;
-					}
+				el.find('.'+self.options.classes.content).droppable({
+					greedy:'true',
+					tolerance:'pointer',
+					accept: function(draggable) {
+						return self._dropAccept(draggable.attr('data-treeviewid'),$(this).parent().attr('data-treeviewid'));
+					},
+					over: function( event, ui ) {
+						if(event.pageX < $(this).find('span').offset().left) {
+							return;
+						}
 					
-					var nodeId 		= ui.draggable.attr('data-treeviewid');
-					var targetId 	= $(this).parent().attr('data-treeviewid');
-					var dropInto	= self._findItem(targetId).childs?true:false;
-					self._dropOver(dropInto,nodeId,targetId);
-				},
-				out: function( event, ui ) {
-					var nodeId 		= ui.draggable.attr('data-treeviewid');
-					var targetId 	= $(this).parent().attr('data-treeviewid');
-					var dropInto	= self._findItem(targetId).childs?true:false;
-					self._dropOut(dropInto,nodeId,targetId);
-				},
-				drop: function( event, ui ) {
-					if(event.pageX < $(this).find('span').offset().left) {
-						return;
-					}
+						var nodeId 		= ui.draggable.attr('data-treeviewid');
+						var targetId 	= $(this).parent().attr('data-treeviewid');
+						var dropInto	= self._findItem(targetId).childs?true:false;
+						self._dropOver(dropInto,nodeId,targetId);
+					},
+					out: function( event, ui ) {
+						var nodeId 		= ui.draggable.attr('data-treeviewid');
+						var targetId 	= $(this).parent().attr('data-treeviewid');
+						var dropInto	= self._findItem(targetId).childs?true:false;
+						self._dropOut(dropInto,nodeId,targetId);
+					},
+					drop: function( event, ui ) {
+						if(event.pageX < $(this).find('span').offset().left) {
+							return;
+						}
 					
-					var nodeId 		= ui.draggable.attr('data-treeviewid');
-					var targetId 	= $(this).parent().attr('data-treeviewid');
-					var dropInto	= self._findItem(targetId).childs?true:false;
-					if(dropInto) {
-						self._dropInto(nodeId,targetId);
-					} else {
+						var nodeId 		= ui.draggable.attr('data-treeviewid');
+						var targetId 	= $(this).parent().attr('data-treeviewid');
+						var dropInto	= self._findItem(targetId).childs?true:false;
+						if(dropInto) {
+							self._dropInto(nodeId,targetId);
+						} else {
+							self._dropBehind(nodeId,targetId);
+						}
+					}
+				});
+				el.find('.'+this.options.classes.icon).droppable({
+					greedy:'true',
+					tolerance:'pointer',
+					accept: function(draggable) {
+						return self._dropAccept(draggable.attr('data-treeviewid'),$(this).parent().parent().attr('data-treeviewid'));
+					},
+					over: function( event, ui ) {
+						var nodeId 		= ui.draggable.attr('data-treeviewid');
+						var targetId 	= $(this).parent().parent().attr('data-treeviewid');
+						self._dropOver(false,nodeId,targetId);
+					},
+					out: function( event, ui ) {
+						var nodeId 		= ui.draggable.attr('data-treeviewid');
+						var targetId 	= $(this).parent().parent().attr('data-treeviewid');
+						self._dropOut(false,nodeId,targetId);
+					},
+					drop: function( event, ui ) {
+						var nodeId 		= ui.draggable.attr('data-treeviewid');
+						var targetId 	= $(this).parent().parent().attr('data-treeviewid');
 						self._dropBehind(nodeId,targetId);
 					}
-				}
+				});
+			} else {
+				// disable text selection on all elements except the input field used for renaming
+				el.mousedown(function(e) {
+					if(e.target.tagName != 'INPUT') {
+						return false;
+					}
+				});
+			}
+		
+			// add to dom
+			this.element.append(el);
+		
+			// click handler
+			el.find('div.'+this.options.classes.folderToggler).click(function() {
+				self._toggleItem(el.attr('data-treeviewid'));
+				return false;
 			});
-			el.find('.'+this.options.classes.icon).droppable({
-				greedy:'true',
-				tolerance:'pointer',
-				accept: function(draggable) {
-					return self._dropAccept(draggable.attr('data-treeviewid'),$(this).parent().parent().attr('data-treeviewid'));
-				},
-				over: function( event, ui ) {
-					var nodeId 		= ui.draggable.attr('data-treeviewid');
-					var targetId 	= $(this).parent().parent().attr('data-treeviewid');
-					self._dropOver(false,nodeId,targetId);
-				},
-				out: function( event, ui ) {
-					var nodeId 		= ui.draggable.attr('data-treeviewid');
-					var targetId 	= $(this).parent().parent().attr('data-treeviewid');
-					self._dropOut(false,nodeId,targetId);
-				},
-				drop: function( event, ui ) {
-					var nodeId 		= ui.draggable.attr('data-treeviewid');
-					var targetId 	= $(this).parent().parent().attr('data-treeviewid');
-					self._dropBehind(nodeId,targetId);
+			el.click(function() {
+				var id = el.attr('data-treeviewid');
+				
+				if(!self.options.allowRename && el.hasClass(self.options.classes.folder) && self.options.toggleOnClick) {
+					self._toggleItem(id);
+				} else {
+					self._selectItem(id);
 				}
+				
+				if(self.options.allowRename) {
+					var ie = self.inlineEditing, res;
+					if(id == ie.id) {
+						if(!ie.active && (+new Date()) - ie.timestamp < 500) {
+							self._renameItem(id);
+						} else if(ie.active) {
+							self._renameItem(id);
+						}
+					} else {
+						if(ie.active) {
+							self._renameItem(ie.id);
+						}
+					}
+					ie.id = id;
+					ie.timestamp = (+new Date());
+				}
+				return false;
 			});
 		} else {
-			// disable text selection on all elements except the input field used for renaming
-			el.mousedown(function(e) {
-				if(e.target.tagName != 'INPUT') {
-					return false;
-				}
-			});
+			node.index = -1;
 		}
 		
-		// add to dom
-		this.element.append(el);
-		
-		// click handler
-		el.find('div.'+this.options.classes.folderToggler).click(function() {
-			self._toggleItem(el.attr('data-treeviewid'));
-			return false;
-		});
-		el.click(function() {
-			var id = el.attr('data-treeviewid');
-			if(self.options.allowRename) {
-				var ie = self.inlineEditing;
-				if(id == ie.id) {
-					if(!ie.active && (+new Date()) - ie.timestamp < 500) {
-						ie.active = true;
-						self._renameItem(id);
-						//clearTimeout(ie.timeout);
-						//return false;
-					} else if(ie.active) {
-						ie.active = false;
-						self._renameItem(id);
-					}
-				} else {
-					if(ie.active) {
-						self._renameItem(ie.id);
-					}
-					ie.active = false;
-				}
-				ie.id = id;
-				ie.timestamp = (+new Date());
-				//ie.timeout = setTimeout(function() {
-			//		self._selectItem(id);
-		//		},500);
-			}// else {
-			
-			if(el.hasClass(self.options.classes.folder) && self.options.toggleOnClick) {
-				self._toggleItem(id);
-			} else {
-				self._selectItem(id);
-			}
-			//}
-			return false;
-		});
-		
-		if(node.childs && !node.collapsed) {
+		if(node.childs && (this._filter||!node.collapsed)) {
 			for(var i=0;i<node.childs.length;i++) {
 				this._rebuildTree(node.childs[i]);
 			}
@@ -808,12 +806,13 @@ $.widget( "ui.dasBaum", {
 				if(typeof this.options.renamed == 'function') {
 					this.options.renamed(node.id,node.label,node.context);
 				}
-				this.inlineEditing.active = false;
-			
+				
 				this._rebuildTree();
 			} else {
 				el.html(node.label);
 			}
+			
+			this.inlineEditing.active = false;
 		} else {
 			if(this.inlineEditing.active) {
 				if(this.inlineEditing.id == id) {
@@ -1004,18 +1003,26 @@ $.widget( "ui.dasBaum", {
 	},
 	
 	handleKey: function(event) {
+		if(event.type =='keydown') {
+			if(event.keyCode >= 37&&event.keyCode<=40) {
+				return true;
+			}
+			return false;
+		}
+		
 		var up = false;
 		switch(event.keyCode) {
-			case 32:
+			case 37:
+			case 39:
 				if(this.hoveredNode) {
 					this.toggleItem(this.hoveredNode.id);
 				}
-				break;
+				return true;
 			case 38:
 				up = true;
 			case 40:
 				var index = this.hoveredNode?this.hoveredNode.index-(up?1:-1):0;
-				var node = this._findItemWithIndex(index);
+				var node = this._findItemWithIndex(index,true);
 				if(node) {
 					var el = this.element.find('[data-treeviewid='+node.id+']');
 					el.mouseenter();
@@ -1026,7 +1033,7 @@ $.widget( "ui.dasBaum", {
 				if(this.hoveredNode) {
 					this.element.find('[data-treeviewid='+this.hoveredNode.id+']').click();
 				} else {
-					var node = this._findItemWithIndex(0);
+					var node = this._findItemWithIndex(0,true);
 					if(node) {
 						this.element.find('[data-treeviewid='+node.id+']').click();
 					}
@@ -1038,6 +1045,24 @@ $.widget( "ui.dasBaum", {
 				break;
 		}
 		return false;
+	},
+	
+	filter: function(keyword) {
+		if(typeof keyword == 'string') {
+			var r = new RegExp(keyword,'i');
+			this._filter = function(node) {
+				return node.label.search(r)>=0;
+			}
+		} else if(typeof keyword == 'function') {
+			this._filter = keyword;
+		} else {
+			this._filter = 
+			this.hoveredNode = null;
+		}
+		
+		this.hoverFirst = !!this._filter;
+		
+		this._rebuildTree();
 	}
 });
 
