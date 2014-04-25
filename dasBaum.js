@@ -6,6 +6,8 @@
  */
 (function( $ ) {
 	
+function stripTags(html) { return html.replace(/<\/?[^>]+>/gi, ''); };
+	
 $.widget( "ui.dasBaum", {
 	options: {
 		// css classes
@@ -42,7 +44,8 @@ $.widget( "ui.dasBaum", {
 		renamed: 	null,
 		moved: 		null,
 		toggled: 	null,
-		details: 	null
+		details: 	null,
+		button: null
 	},
 	
 	targetBehindId: null,
@@ -50,27 +53,27 @@ $.widget( "ui.dasBaum", {
 	targetMode: null,
 	autoId: 0,
 	highlightedNode: null,
-	inlineEditing: {
-		timestamp: 0,
-		id: '',
-		active: false
-	},
+	inlineEditing: null,
 	sort: function(a,b) {
 		if(!a.childs && b.childs) {
 			return 1;
 		} else if(a.childs && !b.childs) {
 			return -1;
 		}
-		if(a.label == b.label) {
+		a = a.label.toLowerCase();
+		b = b.label.toLowerCase();
+		if(a == b) {
 			return 0;
 		}
-		return b.label < a.label ? 1 : -1;
+		return b < a ? 1 : -1;
 	},
 	textSort: function(a,b) {
-		if(a.label == b.label) {
+		a = a.label.toLowerCase();
+		b = b.label.toLowerCase();
+		if(a == b) {
 			return 0;
 		}
-		return b.label < a.label ? 1 : -1;
+		return b < a ? 1 : -1;
 	},
 	typeSort: function(a,b) {
 		if(!a.childs && b.childs) {
@@ -82,11 +85,34 @@ $.widget( "ui.dasBaum", {
 	},
 	//-------------------------------------------------------
 	
+	_idToString: function(id) {
+		if(typeof id == 'number') {
+			return 'n'+id;
+		} else if(typeof id == 'string') {
+			return 's'+id;
+		}
+		throw "[ui.dasBaum:_idToString] ids must be of type number or string";
+	},
+
+	_stringToId: function(string) {
+		if(!string) return string;
+		if(string[0]=='s') {
+			return string.substr(1,string.length-1);
+		} else {
+			return parseFloat(string.substr(1,string.length-1));
+		}
+	},
+
 	_create: function() {
 		
 	},
 	
 	_init: function() {
+		this.inlineEditing = {
+			timestamp: 0,
+			id: '',
+			active: false
+		};
 		var self = this;
 		this.element.addClass(this.options.classes.root);
 		this.element.click(function(){
@@ -100,6 +126,18 @@ $.widget( "ui.dasBaum", {
 				ie.active = false;
 			}
 		});
+		
+		if(typeof this.options.sort == 'function') {
+			var defaultSort = this.sort;
+			var customSort = this.options.sort;
+			this.sort = function(a,b) {
+				var s;
+				if(a.context && b.context) {
+					s = customSort(a.context,b.context);
+				}
+				return s==0?defaultSort(a,b):s;
+			}
+		}
 		
 		this.tree = {id:'',childs:[],level:0,collapsed:false,parent:null,label:"root",element:this.element};
 		
@@ -143,6 +181,20 @@ $.widget( "ui.dasBaum", {
 		return node;
 	},
 	
+	_findItemWithContext: function(context) {
+		var node = null;
+
+		this._map(function(_node) {
+			if(_node.context === context) {
+				node = n;
+				return false;
+			}
+			return true;
+		},null,false);
+
+		return node;
+	},
+
 	_findItem: function(id,node) {
 		if(!id) {
 			return this.tree;
@@ -153,7 +205,7 @@ $.widget( "ui.dasBaum", {
 		if(node.childs) {
 			var e;
 			for(var i=0;i<node.childs.length;i++) {
-				if(node.childs[i].id == id) {
+				if(node.childs[i].id === id) {
 					return node.childs[i];
 				}
 				if(node.childs[i].childs && (e=this._findItem(id,node.childs[i]))) {
@@ -170,7 +222,8 @@ $.widget( "ui.dasBaum", {
 			throw "[ui.dasBaum:_addItem] unknown node id '"+parentId+"'";
 		}
 		if(!parent.childs) {
-			throw "[ui.dasBaum:_addItem] parent is not a folder!";
+			parent.childs = [];
+//			throw "[ui.dasBaum:_addItem] parent is not a folder!";
 		}
 		
 		if(item.id && this._findItem(item.id)) {
@@ -180,10 +233,12 @@ $.widget( "ui.dasBaum", {
 		// create node
 		var node = {id: item.id?item.id:'item'+(this.autoId++),
 					childs:item.items?[]:null,
+					mutated: true,
 					level:parent.level+1,
 					collapsed:item.hasOwnProperty('collapsed')?item.collapsed:true,
 					parent:parent,
 					label:item.label,
+					title:(item.title||''),
 					cls:item.cls||null,
 					element:null,
 					context:item.context||null,
@@ -199,12 +254,8 @@ $.widget( "ui.dasBaum", {
 		}
 		
 		parent.childs.push(node);
-		if(this.options.sort) {
-			parent.childs.sort((this.options.foldersOnTop?this.sort:this.textSort));
-		} else if(this.options.foldersOnTop) {
-			parent.childs.sort(this.typeSort);
-		}
-		
+		parent.mutated = true;
+
 		// create items
 		if(item.items) {
 			for(var i=0;i<item.items.length;i++) {
@@ -214,13 +265,19 @@ $.widget( "ui.dasBaum", {
 	},
 	
 	__rebuildTree: function() {
+		var f;
+		
 		this._index = 0;
-			
+		
+		if (f=this.options.beforeClear) f(this.element);
 		this.element.html('');
+		
 			
 		for(var i=0;i<this.tree.childs.length;i++) {
 			this._rebuildTree(this.tree.childs[i]);
 		}
+		
+		if (f=this.options.onRender) f(this.element);
 			
 		if(this.hoverFirst) {
 			this.hoverFirst = false;
@@ -232,7 +289,7 @@ $.widget( "ui.dasBaum", {
 			//	this.hoveredNode = null;
 			//}
 		} else if(this.hoveredNode) {
-			var e = this.element.find('[data-treeviewid='+this.hoveredNode.id+']');
+			var e = this.element.find('[data-treeviewid="'+this._idToString(this.hoveredNode.id)+'"]');
 			if(e.length == 0) {
 				this.hoveredNode = null;
 			} else {
@@ -246,16 +303,16 @@ $.widget( "ui.dasBaum", {
 			var dh = this.element.find('.'+this.options.classes.dropHelper);
 			dh.droppable({
 				accept: function(draggable) {
-					return self._dropAccept(draggable.attr('data-treeviewid'),'');
+					return self._dropAccept(self._stringToId(draggable.attr('data-treeviewid')),'');
 				},
 				over: function( event, ui ) {
-					self._dropOver(true,ui.draggable.attr('data-treeviewid'),'');
+					self._dropOver(true,self._stringToId(ui.draggable.attr('data-treeviewid')),'');
 				},
 				out: function( event, ui ) {
-					self._dropOut(true,ui.draggable.attr('data-treeviewid'),'');
+					self._dropOut(true,self._stringToId(ui.draggable.attr('data-treeviewid')),'');
 				},
 				drop: function( event, ui ) {
-					self._dropInto(ui.draggable.attr('data-treeviewid'),'');
+					self._dropInto(self._stringToId(ui.draggable.attr('data-treeviewid')),'');
 				}
 			});
 			dh.click(function(){
@@ -314,7 +371,7 @@ $.widget( "ui.dasBaum", {
 				if(this.options.icons) {
 					html += '<div class="'+this.options.classes.icon+'">&nbsp;</div>';
 				}
-				html += '<span title="'+node.label+'">'+node.label+'</span>';
+				html += '<span title="'+node.title+'">'+node.label+'</span>';
 				html += '</div></div>';
 			
 				el = $(html);
@@ -331,7 +388,16 @@ $.widget( "ui.dasBaum", {
 				if(node.html) {
 					html += node.html;
 				} else {
-					html += '<span title="'+node.label+'">'+node.label+'</span>';
+					var hierarchy = '';
+					if(this._filter) {
+						var __p = node.parent;
+						while(__p && __p != this.tree) {
+							hierarchy = __p.label + ' > ' + hierarchy;
+							__p = __p.parent;
+						}
+					}
+					//hierarchy += node.label;
+					html += '<span title="'+(hierarchy||node.title)+'">'+node.label+'</span>';
 				}
 			
 				html += '</div></div>';
@@ -375,7 +441,7 @@ $.widget( "ui.dasBaum", {
 				return false;
 			});
 		
-			el.attr('data-treeviewid',node.id);
+			el.attr('data-treeviewid',this._idToString(node.id));
 		
 			if(node.parent.level >= 1 && !this._filter) {
 				el.css('padding-left',node.parent.level*this.options.indent);
@@ -394,7 +460,7 @@ $.widget( "ui.dasBaum", {
 					start: function() {
 						self._dragging = true;
 						if($(this).find('input').length > 0) {
-							self._renameItem($(this).attr('data-treeviewid'));
+							self._renameItem(self._stringToId($(this).attr('data-treeviewid')));
 						}
 					},
 					stop: function() {
@@ -414,21 +480,21 @@ $.widget( "ui.dasBaum", {
 					greedy:'true',
 					tolerance:'pointer',
 					accept: function(draggable) {
-						return self._dropAccept(draggable.attr('data-treeviewid'),$(this).parent().attr('data-treeviewid'));
+						return self._dropAccept(self._stringToId(draggable.attr('data-treeviewid')),self._stringToId($(this).parent().attr('data-treeviewid')));
 					},
 					over: function( event, ui ) {
 						if(event.pageX < $(this).find('span').offset().left) {
 							return;
 						}
 					
-						var nodeId 		= ui.draggable.attr('data-treeviewid');
-						var targetId 	= $(this).parent().attr('data-treeviewid');
+						var nodeId 		= self._stringToId(ui.draggable.attr('data-treeviewid'));
+						var targetId 	= self._stringToId($(this).parent().attr('data-treeviewid'));
 						var dropInto	= self._findItem(targetId).childs?true:false;
 						self._dropOver(dropInto,nodeId,targetId);
 					},
 					out: function( event, ui ) {
-						var nodeId 		= ui.draggable.attr('data-treeviewid');
-						var targetId 	= $(this).parent().attr('data-treeviewid');
+						var nodeId 		= self._stringToId(ui.draggable.attr('data-treeviewid'));
+						var targetId 	= self._stringToId($(this).parent().attr('data-treeviewid'));
 						var dropInto	= self._findItem(targetId).childs?true:false;
 						self._dropOut(dropInto,nodeId,targetId);
 					},
@@ -437,8 +503,8 @@ $.widget( "ui.dasBaum", {
 							return;
 						}
 					
-						var nodeId 		= ui.draggable.attr('data-treeviewid');
-						var targetId 	= $(this).parent().attr('data-treeviewid');
+						var nodeId 		= self._stringToId(ui.draggable.attr('data-treeviewid'));
+						var targetId 	= self._stringToId($(this).parent().attr('data-treeviewid'));
 						var dropInto	= self._findItem(targetId).childs?true:false;
 						if(dropInto) {
 							self._dropInto(nodeId,targetId);
@@ -451,21 +517,21 @@ $.widget( "ui.dasBaum", {
 					greedy:'true',
 					tolerance:'pointer',
 					accept: function(draggable) {
-						return self._dropAccept(draggable.attr('data-treeviewid'),$(this).parent().parent().attr('data-treeviewid'));
+						return self._dropAccept(self._stringToId(draggable.attr('data-treeviewid')),self._stringToId($(this).parent().parent().attr('data-treeviewid')));
 					},
 					over: function( event, ui ) {
-						var nodeId 		= ui.draggable.attr('data-treeviewid');
-						var targetId 	= $(this).parent().parent().attr('data-treeviewid');
+						var nodeId 		= self._stringToId(ui.draggable.attr('data-treeviewid'));
+						var targetId 	= self._stringToId($(this).parent().parent().attr('data-treeviewid'));
 						self._dropOver(false,nodeId,targetId);
 					},
 					out: function( event, ui ) {
-						var nodeId 		= ui.draggable.attr('data-treeviewid');
-						var targetId 	= $(this).parent().parent().attr('data-treeviewid');
+						var nodeId 		= self._stringToId(ui.draggable.attr('data-treeviewid'));
+						var targetId 	= self._stringToId($(this).parent().parent().attr('data-treeviewid'));
 						self._dropOut(false,nodeId,targetId);
 					},
 					drop: function( event, ui ) {
-						var nodeId 		= ui.draggable.attr('data-treeviewid');
-						var targetId 	= $(this).parent().parent().attr('data-treeviewid');
+						var nodeId 		= self._stringToId(ui.draggable.attr('data-treeviewid'));
+						var targetId 	= self._stringToId($(this).parent().parent().attr('data-treeviewid'));
 						self._dropBehind(nodeId,targetId);
 					}
 				});
@@ -477,17 +543,17 @@ $.widget( "ui.dasBaum", {
 					}
 				});
 			}
-		
+			
 			// add to dom
 			this.element.append(el);
 		
 			// click handler
 			el.find('div.'+this.options.classes.folderToggler).click(function() {
-				self._toggleItem(el.attr('data-treeviewid'));
+				self._toggleItem(self._stringToId(el.attr('data-treeviewid')));
 				return false;
 			});
 			el.click(function() {
-				var id = el.attr('data-treeviewid');
+				var id = self._stringToId(el.attr('data-treeviewid'));
 				
 				if(!self.options.allowRename && el.hasClass(self.options.classes.folder) && self.options.toggleOnClick) {
 					self._toggleItem(id);
@@ -497,7 +563,7 @@ $.widget( "ui.dasBaum", {
 				
 				if(self.options.allowRename) {
 					var ie = self.inlineEditing, res;
-					if(id == ie.id) {
+					if(id === ie.id) {
 						if(!ie.active && (+new Date()) - ie.timestamp < 500) {
 							self._renameItem(id);
 						} else if(ie.active) {
@@ -518,6 +584,16 @@ $.widget( "ui.dasBaum", {
 		}
 		
 		if(node.childs && (this._filter||!node.collapsed)) {
+
+			if(node.mutated) {
+				node.mutated = false;
+				if(this.options.sort) {
+					node.childs.sort((this.options.foldersOnTop?this.sort:this.textSort));
+				} else if(this.options.foldersOnTop) {
+					node.childs.sort(this.typeSort);
+				}
+			}
+
 			for(var i=0;i<node.childs.length;i++) {
 				this._rebuildTree(node.childs[i]);
 			}
@@ -708,7 +784,8 @@ $.widget( "ui.dasBaum", {
 		
 		// remove from parent
 		node.parent.childs.splice(oldIndex,1);
-		
+		node.parent.mutated = true;
+
 		// insert element
 		target.parent.childs.push(null);
 		for(i=target.parent.childs.length-2;i>=index+1;i--) {
@@ -720,10 +797,8 @@ $.widget( "ui.dasBaum", {
 		node.parent = target.parent;
 		
 		// sorting
-		if(this.options.sort) {
-			target.parent.childs.sort((this.options.foldersOnTop?this.sort:this.textSort));
-		}
-		
+		target.parent.mutated = true;
+
 		if(typeof this.options.moved == 'function') {
 			this.options.moved(node.id,target.parent.id,node.context,target.parent.context);
 		}
@@ -774,9 +849,7 @@ $.widget( "ui.dasBaum", {
 		}
 		
 		// sorting
-		if(this.options.sort) {
-			target.childs.sort((this.options.foldersOnTop?this.sort:this.textSort));
-		}
+		target.mutated = true;
 		
 		if(typeof this.options.moved == 'function') {
 			this.options.moved(node.id,target.id,node.context,target.context);
@@ -791,18 +864,14 @@ $.widget( "ui.dasBaum", {
 			return;
 		}
 		
-		var el = this.element.find('[data-treeviewid='+id+'] span');
+		var el = this.element.find('[data-treeviewid="'+this._idToString(id)+'"] span');
 		var ip = el.find('input');
 		if(ip.length>0) {
 			if(node.label != ip[0].value) {
 				node.label = ip[0].value;
-			
-				if(this.options.sort) {
-					node.parent.childs.sort((this.options.foldersOnTop?this.sort:this.textSort));
-				} else if(this.options.foldersOnTop) {
-					node.parent.childs.sort(this.typeSort);
-				}
-			
+				
+				node.parent.mutated = true;
+
 				if(typeof this.options.renamed == 'function') {
 					this.options.renamed(node.id,node.label,node.context);
 				}
@@ -815,7 +884,7 @@ $.widget( "ui.dasBaum", {
 			this.inlineEditing.active = false;
 		} else {
 			if(this.inlineEditing.active) {
-				if(this.inlineEditing.id == id) {
+				if(this.inlineEditing.id === id) {
 					return;
 				}
 				this._renameItem(this.inlineEditing.id);
@@ -843,17 +912,17 @@ $.widget( "ui.dasBaum", {
 		}
 	},
 	
-	_selectItem: function(id,suppressEvent) {
+	_selectItem: function(id,suppressEvent,suppressToggle) {
 		var node = this._findItem(id),p=node;
 		while(p && (p=p.parent)) {
-			if(p.collapsed) {
+			if(p.collapsed && !suppressToggle) {
 				this._toggleItem(p.id,false);
 			}
 		}
 		
 		var el;
 		if(this.highlightedNode) {
-			el = this.element.find('[data-treeviewid='+this.highlightedNode.id+']');
+			el = this.element.find('[data-treeviewid="'+this._idToString(this.highlightedNode.id)+'"]');
 			el.removeClass(this.options.classes.highlighted);
 		}
 		
@@ -874,7 +943,7 @@ $.widget( "ui.dasBaum", {
 		
 		if(highlight) {
 			this.highlightedNode = node;
-			el = this.element.find('[data-treeviewid='+this.highlightedNode.id+']');
+			el = this.element.find('[data-treeviewid="'+this._idToString(this.highlightedNode.id)+'"]');
 			el.addClass(this.options.classes.highlighted);	
 		}
 	},
@@ -925,13 +994,7 @@ $.widget( "ui.dasBaum", {
 	// public methods
 	//==================================================================
 	
-	setItems: function(items) {
-		this.tree.childs = [];
-		
-		for(var i=0;i<items.length;i++) {
-			this._addItem(null,items[i]);
-		}
-		
+	sortItems: function() {
 		if(this.options.sort || this.options.foldersOnTop) {
 			var initialSort = this.options.sort?(this.options.foldersOnTop?this.sort:this.textSort):this.typeSort;
 			this._map(function(n) {
@@ -944,8 +1007,20 @@ $.widget( "ui.dasBaum", {
 		this._rebuildTree();
 	},
 	
-	selectItem: function(id,suppressEvent) {
-		this._selectItem(id,suppressEvent);
+	setItems: function(items) {
+		this.tree.childs = [];
+		
+		for(var i=0;i<items.length;i++) {
+			this._addItem(null,items[i]);
+		}
+		
+		this.sortItems();
+		
+		this._rebuildTree();
+	},
+	
+	selectItem: function(id,suppressEvent,suppressToggle) {
+		this._selectItem(id,suppressEvent,suppressToggle);
 	},
 	
 	addItems: function(items) {
@@ -987,7 +1062,22 @@ $.widget( "ui.dasBaum", {
 		this._dropInto(id,targetId);
 	},
 	
-	renameItem: function(id,name) {
+	modifyItem: function(id,property,value) {
+		var node = this._findItem(id);
+		if(!node) {
+			return;
+		}
+
+		switch(property) {
+			case 'buttons':
+				node.buttons = value;
+				break;
+		}
+
+		this._rebuildTree();
+	},
+
+	renameItem: function(id,name,title) {
 		var node = this._findItem(id);
 		if(!node) {
 			return;
@@ -998,8 +1088,11 @@ $.widget( "ui.dasBaum", {
 		}
 		node.label = name;
 		
-		var el = this.element.find('[data-treeviewid='+id+'] span');
+		var el = this.element.find('[data-treeviewid="'+this._idToString(id)+'"] span');
 		el.html(name);
+		if(title) {
+			el.attr('title',title);
+		}
 	},
 	
 	handleKey: function(event) {
@@ -1024,18 +1117,18 @@ $.widget( "ui.dasBaum", {
 				var index = this.hoveredNode?this.hoveredNode.index-(up?1:-1):0;
 				var node = this._findItemWithIndex(index,true);
 				if(node) {
-					var el = this.element.find('[data-treeviewid='+node.id+']');
+					var el = this.element.find('[data-treeviewid="'+this._idToString(node.id)+'"]');
 					el.mouseenter();
 					this.hoveredNode = node;
 				}
 				return true;
 			case 13:
 				if(this.hoveredNode) {
-					this.element.find('[data-treeviewid='+this.hoveredNode.id+']').click();
+					this.element.find('[data-treeviewid="'+this._idToString(this.hoveredNode.id)+'"]').click();
 				} else {
 					var node = this._findItemWithIndex(0,true);
 					if(node) {
-						this.element.find('[data-treeviewid='+node.id+']').click();
+						this.element.find('[data-treeviewid="'+this._idToString(node.id)+'"]').click();
 					}
 				}
 				return true;
@@ -1063,7 +1156,9 @@ $.widget( "ui.dasBaum", {
 		this.hoverFirst = !!this._filter;
 		
 		this._rebuildTree();
-	}
+	},
+	
+	getItem: function(id){ return this._findItem(id); }
 });
 
 }(jQuery));
