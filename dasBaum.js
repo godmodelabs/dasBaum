@@ -5,9 +5,7 @@
  * @author Martin Kleinhans <kleinhans@boerse-go.de>
  */
 (function( $ ) {
-	
-function stripTags(html) { return html.replace(/<\/?[^>]+>/gi, ''); };
-	
+
 $.widget( "ui.dasBaum", {
 	options: {
 		// css classes
