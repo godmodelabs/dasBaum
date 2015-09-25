@@ -35,6 +35,7 @@ $.widget( "ui.dasBaum", {
 		allowDeselect:  true,
 		foldersOnTop: 	true,
 		toggleOnClick:  false,
+		encodeHTMLEntities: true,
 		// initial items
 		items: [],
 		// callbacks
@@ -52,6 +53,7 @@ $.widget( "ui.dasBaum", {
 	autoId: 0,
 	highlightedNode: null,
 	inlineEditing: null,
+
 	sort: function(a,b) {
 		if(!a.childs && b.childs) {
 			return 1;
@@ -82,7 +84,12 @@ $.widget( "ui.dasBaum", {
 		return 0;
 	},
 	//-------------------------------------------------------
-	
+
+	_htmlentities: function(value) {
+		if(typeof value !== 'string') value = (value || '') + '';
+        return value.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    },
+
 	_idToString: function(id) {
 		if(typeof id == 'number') {
 			return 'n'+id;
@@ -137,7 +144,7 @@ $.widget( "ui.dasBaum", {
 			}
 		}
 		
-		this.tree = {id:'',childs:[],level:0,collapsed:false,parent:null,label:"root",element:this.element};
+		this.tree = {id:'',childs:[],level:0,collapsed:false,mutated:false,parent:null,label:"root",element:this.element};
 		
 		this.setItems(this.options.items);
 	},
@@ -201,12 +208,13 @@ $.widget( "ui.dasBaum", {
 			node = this.tree;
 		}
 		if(node.childs) {
-			var e;
-			for(var i=0;i<node.childs.length;i++) {
-				if(node.childs[i].id === id) {
-					return node.childs[i];
+			var e, i, l, c = node.childs, cc;
+			for(i=0,l=c.length;i<l;i++) {
+				cc = c[i];
+				if(cc.id === id) {
+					return cc;
 				}
-				if(node.childs[i].childs && (e=this._findItem(id,node.childs[i]))) {
+				if(cc.childs && (e=this._findItem(id,cc))) {
 					return e;
 				}
 			}
@@ -270,7 +278,12 @@ $.widget( "ui.dasBaum", {
 		if (f=this.options.beforeClear) f(this.element);
 		this.element.html('');
 		
-			
+		if(this.tree.mutated) {
+			this.tree.mutated = false;
+			if(this.options.sort) {this.tree.childs.sort((this.options.foldersOnTop?this.sort:this.textSort));} 
+			else if(this.options.foldersOnTop) {this.tree.childs.sort(this.typeSort);}
+		}
+
 		for(var i=0;i<this.tree.childs.length;i++) {
 			this._rebuildTree(this.tree.childs[i]);
 		}
@@ -369,7 +382,9 @@ $.widget( "ui.dasBaum", {
 				if(this.options.icons) {
 					html += '<div class="'+this.options.classes.icon+'">&nbsp;</div>';
 				}
-				html += '<span title="'+node.title+'">'+node.label+'</span>';
+				html += '<span title="'+node.title+'">' + 
+					(this.options.encodeHTMLEntities ? this._htmlentities(node.label) : node.label) +
+					'</span>';
 				html += '</div></div>';
 			
 				el = $(html);
@@ -395,7 +410,9 @@ $.widget( "ui.dasBaum", {
 						}
 					}
 					//hierarchy += node.label;
-					html += '<span title="'+(hierarchy||node.title)+'">'+node.label+'</span>';
+					html += '<span title="'+(hierarchy||node.title)+'">' + 
+						(this.options.encodeHTMLEntities ? this._htmlentities(node.label) : node.label)
+						+ '</span>';
 				}
 			
 				html += '</div></div>';
@@ -876,7 +893,7 @@ $.widget( "ui.dasBaum", {
 				
 				this._rebuildTree();
 			} else {
-				el.html(node.label);
+				el.html((this.options.encodeHTMLEntities ? this._htmlentities(node.label) : node.label));
 			}
 			
 			this.inlineEditing.active = false;
