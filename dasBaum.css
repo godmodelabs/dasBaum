@@ -12,7 +12,7 @@
 .tv_dropHoverRoot{background-color:rgba(200, 200, 200, 0.1);}
 .tv_hover{color:#333;background-color:#ffcc00;text-shadow:0px 1px 1px #fff;border-radius:2px;box-shadow:inset 0px 1px 1px rgba(255, 255, 255, 0.33),inset 0px -1px 1px rgba(0, 0, 0, 0.33);}.tv_hover span{color:#000 !important;text-shadow:0px 1px 1px #fff !important;}
 .tv_button_details{text-indent:20px;overflow:hidden;background-image:url(img/icon-details.png);background-repeat:no-repeat;background-position:center center;}
-.tv_button_actions{text-indent:20px;overflow:hidden;background-image:url(img/icon-delete.png);background-repeat:no-repeat;background-position:center center;}
+.tv_button_delete, .tv_button_actions{text-indent:20px;overflow:hidden;background-image:url(img/icon-delete.png);background-repeat:no-repeat;background-position:center center;}
 .tv_button{float:right;margin-left:0px;height:24px;width:24px;text-indent:-9999px;background-repeat:no-repeat;}.tv_button.tv_button_actions{background-image:url(img/icon-charting-delete.png);}.tv_button.tv_button_actions:hover{background-image:url(img/icon-charting-delete-act.png);}
 .tv_button.tv_button_details{background-image:url(img/icon-tv-view.png);}.tv_button.tv_button_details:hover{background-image:url(img/icon-tv-view-act.png);}
 .button_newFolder{background-image:url(img/icon-tv-newfolder.png);position:absolute;top:8px;left:13px;height:24px;width:24px;text-indent:-9999px;background-repeat:no-repeat;}.button_newFolder:hover{background-image:url(img/icon-tv-newfolder-act.png);}
