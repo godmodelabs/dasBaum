@@ -1,0 +1,11 @@
+{
+	"name": 		"dasBaum",
+	"author":		"Martin Kleinhans <martin.kleinhans@boerse-go.de> (http://www.boerse-go.ag)",
+	"description":	"A treeview widget based on jQuery-ui. Supports drag & drop, custom sorting, filtering, and more.",
+
+	"main":			"dasBaum.js",
+
+	"private": 		true,
+
+	"version":		"1.0.0"
+}
