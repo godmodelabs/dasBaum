@@ -239,6 +239,7 @@ $.widget( "ui.dasBaum", {
 		// create node
 		var node = {id: item.id?item.id:'item'+(this.autoId++),
 					childs:item.items?[]:null,
+					folder:item.folder===true || item.items ? true : false,
 					mutated: true,
 					level:parent.level+1,
 					collapsed:item.hasOwnProperty('collapsed')?item.collapsed:true,
@@ -998,6 +999,9 @@ $.widget( "ui.dasBaum", {
 		for(var i=0;i<node.parent.childs.length;i++) {
 			if(node.parent.childs[i] == node) {
 				node.parent.childs.splice(i,1);
+				if(node.parent.childs.length === 0 && !node.parent.folder) {
+					node.parent.childs = null;
+				}
 				break;
 			}
 		}
